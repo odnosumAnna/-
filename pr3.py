@@ -131,8 +131,6 @@ class Node:
         prev_block = self.blockchain.get_latest_block()
         new_block = Block("1.0", prev_block.block_hash, transactions, difficulty_target)
         print(f"Майнинг нового блоку з хешем попереднього блоку: {prev_block.block_hash}")
-
-        # Proof-of-Work: пошук правильного nonce
         while int(new_block.block_hash, 16) >= difficulty_target:
             new_block.nonce += 1
             new_block.block_hash = new_block.calculate_hash()
@@ -141,7 +139,6 @@ class Node:
         return new_block
 
     def receive_block(self, block: Block):
-        # Верифікація та додавання блоку
         if self.blockchain.add_block(block):
             print(f"Блок успішно доданий до локального блокчейну ноди.")
         else:
