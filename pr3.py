@@ -2,6 +2,7 @@ import hashlib
 import time
 import json
 import base64
+import random
 from ecdsa import SigningKey, VerifyingKey, SECP256k1
 
 class Transaction:
@@ -109,6 +110,7 @@ class Blockchain:
         self.chain.append(genesis_block)
 
     def add_block(self, new_block: Block):
+        # Перевірка на наявність такого ж блоку
         if any(block.block_hash == new_block.block_hash for block in self.chain):
             print("Блок уже доданий до ланцюга.")
             return False
@@ -130,6 +132,7 @@ class Node:
         new_block = Block("1.0", prev_block.block_hash, transactions, difficulty_target)
         print(f"Майнинг нового блоку з хешем попереднього блоку: {prev_block.block_hash}")
 
+        # Proof-of-Work: пошук правильного nonce
         while int(new_block.block_hash, 16) >= difficulty_target:
             new_block.nonce += 1
             new_block.block_hash = new_block.calculate_hash()
@@ -138,40 +141,49 @@ class Node:
         return new_block
 
     def receive_block(self, block: Block):
+        # Верифікація та додавання блоку
         if self.blockchain.add_block(block):
             print(f"Блок успішно доданий до локального блокчейну ноди.")
         else:
             print(f"Блок відхилено.")
 
+    @staticmethod
+    def generate_random_transactions(num_transactions: int):
+        transactions = []
+        for _ in range(num_transactions):
+            sender = f"sender_address_{random.randint(1, 10)}"
+            receivers = [f"receiver_address_{random.randint(1, 10)}" for _ in range(random.randint(1, 3))]
+            amount = round(random.uniform(1.0, 100.0), 2)
+            transactions.append(Transaction(sender, receivers, amount))
+        return transactions
+
 # Імітація роботи мережі
 def simulate_network():
-    # ств. ключову пару
+    # Створюємо ключову пару
     private_key = SigningKey.generate(curve=SECP256k1)
     public_key = private_key.get_verifying_key()
 
-    # ств. транзакції
-    tx1 = Transaction("sender_address_1", ["receiver_address_1"], 100.0)
-    tx1.sign_transaction(private_key)
+    # Генеруємо випадкові транзакції
+    random_transactions = Node.generate_random_transactions(5)  # Генеруємо 5 випадкових транзакцій
+    for tx in random_transactions:
+        tx.sign_transaction(private_key)
 
-    tx2 = Transaction("sender_address_2", ["receiver_address_2", "receiver_address_3"], 50.0)
-    tx2.sign_transaction(private_key)
-
-    # ств. блокчейн та кілька нод
+    # Створюємо блокчейн та кілька нод
     blockchain_1 = Blockchain()
     blockchain_2 = Blockchain()
 
     node_1 = Node(blockchain_1)
     node_2 = Node(blockchain_2)
 
-    # майнимо новий блок на першій ноді
+    # Майнимо новий блок на першій ноді
     difficulty_target = 0x00000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-    new_block = node_1.mine_block([tx1, tx2], difficulty_target)
+    new_block = node_1.mine_block(random_transactions, difficulty_target)
 
-    # передаємо блок на іншу ноду
+    # Передаємо блок на іншу ноду
     print("\nНода 1 передає блок Ноді 2 для верифікації та додавання:")
     node_2.receive_block(new_block)
 
-    # виводимо інформацію про блокчейн кожної ноди
+    # Виводимо інформацію про блокчейн кожної ноди
     print("\nБлокчейн ноди 1:")
     print(blockchain_1)
 
