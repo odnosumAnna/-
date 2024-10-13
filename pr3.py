@@ -110,7 +110,6 @@ class Blockchain:
         self.chain.append(genesis_block)
 
     def add_block(self, new_block: Block):
-        # Перевірка на наявність такого ж блоку
         if any(block.block_hash == new_block.block_hash for block in self.chain):
             print("Блок уже доданий до ланцюга.")
             return False
@@ -131,6 +130,7 @@ class Node:
         prev_block = self.blockchain.get_latest_block()
         new_block = Block("1.0", prev_block.block_hash, transactions, difficulty_target)
         print(f"Майнинг нового блоку з хешем попереднього блоку: {prev_block.block_hash}")
+
         while int(new_block.block_hash, 16) >= difficulty_target:
             new_block.nonce += 1
             new_block.block_hash = new_block.calculate_hash()
@@ -156,31 +156,31 @@ class Node:
 
 # Імітація роботи мережі
 def simulate_network():
-    # Створюємо ключову пару
+    # ств. ключову пару
     private_key = SigningKey.generate(curve=SECP256k1)
     public_key = private_key.get_verifying_key()
 
-    # Генеруємо випадкові транзакції
-    random_transactions = Node.generate_random_transactions(5)  # Генеруємо 5 випадкових транзакцій
+    # генеруємо випадкові транзакції
+    random_transactions = Node.generate_random_transactions(5)  # 5 випадкових транзакцій
     for tx in random_transactions:
         tx.sign_transaction(private_key)
 
-    # Створюємо блокчейн та кілька нод
+    # ств. блокчейн та кілька нод
     blockchain_1 = Blockchain()
     blockchain_2 = Blockchain()
 
     node_1 = Node(blockchain_1)
     node_2 = Node(blockchain_2)
 
-    # Майнимо новий блок на першій ноді
+    # майнимо новий блок на першій ноді
     difficulty_target = 0x00000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
     new_block = node_1.mine_block(random_transactions, difficulty_target)
 
-    # Передаємо блок на іншу ноду
+    # передаємо блок на іншу ноду
     print("\nНода 1 передає блок Ноді 2 для верифікації та додавання:")
     node_2.receive_block(new_block)
 
-    # Виводимо інформацію про блокчейн кожної ноди
+    # виводимо інформацію про блокчейн кожної ноди
     print("\nБлокчейн ноди 1:")
     print(blockchain_1)
 
