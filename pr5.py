@@ -12,7 +12,7 @@ class Node:
     def validate_block(self, block):
         return True
 
-    def send_valid_message(self, messages, node):
+    def send_valid_message(self, block, node):
         time.sleep(0.01)
         node.receive_valid_message(self.id, "Valid")
 
@@ -47,20 +47,21 @@ def bft_protocol(n):
     nodes = [Node(i, n) for i in range(n)]
     leader = nodes[0]
 
+    # лідер створює блок і розсилає його іншим вузлам
     block = {"id": 1, "transactions": ["tx1", "tx2", "tx3"]}
+    print(f"Leader Node {leader.id} created block {block['id']}.")
 
     start_time = time.time()
 
     for node in nodes[1:]:
         node.receive_block(block, nodes)
 
-    for node in nodes:
-        node.process_block(block)
+    consensus_reached = all(node.process_block(block) for node in nodes)
 
     end_time = time.time()
     return end_time - start_time
 
-participants = [10, 100, 1000 ]
+participants = [10, 20, 45, 100, 1000 ]
 times = []
 
 for n in participants:
@@ -68,7 +69,7 @@ for n in participants:
     times.append(execution_time)
     print(f'Кількість учасників: {n}, Час виконання: {execution_time:.4f} секунд')
 
-# побудова графіку
+# Побудова графіку
 plt.plot(participants, times, marker='o')
 plt.xlabel('Кількість учасників')
 plt.ylabel('Час виконання (секунди)')
