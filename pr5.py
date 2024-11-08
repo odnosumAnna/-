@@ -153,11 +153,12 @@ class Node:
         self.received_valid_msgs += 1
 
     def validate_block(self, block: Block):
-        return block.block_hash.startswith("0000")
+        return block.block_hash.startswith("0000") and block.verify_merkle_root()  # перевірка підпису та транзакцій
 
     def finalize_block(self, block: Block, total_nodes):
         if self.received_valid_msgs >= (2 * total_nodes) // 3:
             self.blockchain.add_block(block)
+ #           print(f"Блок успішно додано до ланцюга в вузлі {self.node_id}")
 
 
 def bft_protocol(num_nodes):
@@ -165,8 +166,12 @@ def bft_protocol(num_nodes):
     nodes = [Node(blockchain, i) for i in range(num_nodes)]
     transactions = [Transaction(f"sender_{i}", [f"receiver_{i}"], random.uniform(1, 100)) for i in range(5)]
     leader_node = nodes[0]
+
+    # майнимо новий блок і виводимо інформацію про знайдений нонсе
+    print(f"\nСимуляція для {num_nodes} вузлів:")
     new_block = leader_node.mine_block(transactions,
                                        difficulty_target=0x00000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+    print(f"Правильний нонсе знайдено: {new_block.nonce}")
 
     threads = []
     for node in nodes:
@@ -180,12 +185,15 @@ def bft_protocol(num_nodes):
     for node in nodes:
         node.finalize_block(new_block, num_nodes)
 
+    print("Блок успішно додано до ланцюга")
+
 
 def measure_time_for_protocol(num_nodes):
     start_time = time.time()
     bft_protocol(num_nodes)
     end_time = time.time()
     duration = end_time - start_time
+    print(f"Час виконання для {num_nodes} вузлів: {duration:.2f} секунд")
     return duration
 
 
@@ -195,7 +203,7 @@ execution_times = []
 for num_nodes in node_counts:
     execution_time = measure_time_for_protocol(num_nodes)
     execution_times.append(execution_time)
-    print(f"Час виконання для {num_nodes} вузлів: {execution_time:.2f} секунд")
+
 
 def plot_execution_time():
     plt.plot(node_counts, execution_times, marker='o')
@@ -204,5 +212,6 @@ def plot_execution_time():
     plt.ylabel("Час виконання (сек.)")
     plt.grid(True)
     plt.show()
+
 
 plot_execution_time()
